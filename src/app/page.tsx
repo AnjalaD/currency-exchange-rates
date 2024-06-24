@@ -10,96 +10,26 @@ import {
   CardHeader,
   Input,
 } from "@nextui-org/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { currencies } from "./currencies";
-import { RatesResult } from "./types/rates";
+import { useLastUpdated } from "@/state/data";
+import { useWidgets } from "@/state/widgets";
 
 export default function Home() {
-  const [baseCurrency, setBaseCurrency] = useState("USD");
-  const [baseValue, setBaseValue] = useState(1);
+  const lastUpdated = useLastUpdated();
 
   const [newCurrency, setNewCurrency] = useState<string>();
 
-  const [rates, setRates] = useState<RatesResult["conversion_rates"]>();
-  const [lastUpdate, setLastUpdate] = useState<Date>();
+  const base = useWidgets.use.base();
+  const baseCurrency = base.currency;
+  const baseAmount = base.amount;
+  const setBaseCurrency = useWidgets.use.setBaseCurrency();
+  const setBaseAmount = useWidgets.use.setBaseAmount();
 
-  const [targets, setTargets] = useState<{ code: string; value?: number }[]>([
-    { code: "LKR" },
-  ]);
-
-  const onBaseCurrencyChange = (code: string) => {
-    setBaseCurrency(code);
-    setTargets((prev) =>
-      prev.map((target) => ({ ...target, value: undefined }))
-    );
-  };
-  const onBaseValueChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    setBaseValue(Number(e.target.value));
-    setTargets((prev) =>
-      prev.map((target) => {
-        const rate = rates?.[target.code];
-        return {
-          ...target,
-          value: rate ? rate * Number(e.target.value) : undefined,
-        };
-      })
-    );
-  };
-
-  const onTargetCurrencyChange = (code: string, index: number) => {
-    const newTargets = [...targets];
-    newTargets[index].code = code;
-    newTargets[index].value = undefined;
-    setTargets(newTargets);
-  };
-
-  const onTargetValueChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    const rate = rates?.[targets[index].code];
-    if (!rate) {
-      return;
-    }
-    const baseValue = +Number(e.target.value) / rate;
-    setBaseValue(+baseValue.toFixed(4));
-
-    setTargets((prev) =>
-      prev.map((target) => {
-        if (target.code === targets[index].code) {
-          return { ...target, value: +e.target.value };
-        }
-
-        const rate = +rates[target.code]?.toFixed(4);
-        return { ...target, value: rate ? rate * baseValue : undefined };
-      })
-    );
-  };
-
-  const onAddCurrency = () => {
-    if (!newCurrency) return;
-    setNewCurrency(undefined);
-    setTargets((prev) => [...prev, { code: newCurrency }]);
-  };
-
-  const [loading, setLoading] = useState(false);
-
-  const handleFetch = async (currency: string) => {
-    try {
-      setLoading(true);
-      const response = await fetchExchangeRates(currency);
-      setRates(response.conversion_rates);
-      setLastUpdate(new Date(response.time_last_update_utc));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    handleFetch(baseCurrency);
-  }, [baseCurrency]);
+  const targets = useWidgets.use.target();
+  const addTargetCurrency = useWidgets.use.addTargetCurrency();
+  const setTargetCurrency = useWidgets.use.setTargetCurrency();
+  const setTargetAmount = useWidgets.use.setTargetAmount();
 
   return (
     <main className="max-w-7xl mx-auto flex min-h-screen flex-col items-center justify-between p-24">
@@ -107,9 +37,9 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-center">
           Welcome to the Exchange Rates
         </h1>
-        {lastUpdate && (
-          <p className="text-center text-sm">
-            Last updated: {lastUpdate.toLocaleString()}
+        {lastUpdated && (
+          <p className="text-center">
+            Last updated: {new Date(lastUpdated).toLocaleString()}
           </p>
         )}
       </div>
@@ -126,9 +56,7 @@ export default function Home() {
               color="primary"
               label="Select Base Currency"
               selectedKey={baseCurrency}
-              onSelectionChange={(key) =>
-                key && onBaseCurrencyChange(key as string)
-              }
+              onSelectionChange={(key) => key && setBaseCurrency(key as string)}
               defaultItems={currencies}
             >
               {(item) => (
@@ -141,8 +69,8 @@ export default function Home() {
               color="primary"
               label="Amount"
               type="number"
-              value={baseValue.toString()}
-              onChange={onBaseValueChange}
+              value={baseAmount?.toString() ?? ""}
+              onChange={(e) => setBaseAmount(e.target.valueAsNumber)}
             />
           </CardBody>
         </Card>
@@ -150,14 +78,14 @@ export default function Home() {
         {targets.map((target, index) => (
           <Card key={index}>
             <CardHeader>
-              <h2 className="text-large font-bold">{target.code}</h2>
+              <h2 className="text-large font-bold">{target.currency}</h2>
             </CardHeader>
             <CardBody className="flex flex-col gap-2">
               <Autocomplete
                 label="Select Target Currency"
-                selectedKey={target.code}
+                selectedKey={target.currency}
                 onSelectionChange={(key) =>
-                  key && onTargetCurrencyChange(key as string, index)
+                  key && setTargetCurrency(key as string, index)
                 }
                 defaultItems={currencies}
               >
@@ -171,8 +99,8 @@ export default function Home() {
               <Input
                 label="Amount"
                 type="number"
-                value={target.value?.toString() || ""}
-                onChange={(e) => onTargetValueChange(e, index)}
+                value={target.amount?.toString() || ""}
+                onChange={(e) => setTargetAmount(e.target.valueAsNumber, index)}
               />
             </CardBody>
           </Card>
@@ -198,7 +126,11 @@ export default function Home() {
             </Autocomplete>
           </CardBody>
           <CardFooter>
-            <Button fullWidth onClick={onAddCurrency} isDisabled={!newCurrency}>
+            <Button
+              fullWidth
+              onClick={() => newCurrency && addTargetCurrency(newCurrency)}
+              isDisabled={!newCurrency}
+            >
               Add Currency
             </Button>
           </CardFooter>
@@ -207,11 +139,3 @@ export default function Home() {
     </main>
   );
 }
-
-const fetchExchangeRates = async (currency: string) => {
-  const response = await fetch("/api/rates?base=" + currency, {
-    method: "GET",
-  });
-  const res: RatesResult = await response.json();
-  return res;
-};
