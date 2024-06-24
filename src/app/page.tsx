@@ -12,6 +12,7 @@ import {
 } from "@nextui-org/react";
 import { useEffect, useState } from "react";
 import { currencies } from "./currencies";
+import { RatesResult } from "./types/rates";
 
 export default function Home() {
   const [baseCurrency, setBaseCurrency] = useState("USD");
@@ -19,18 +20,8 @@ export default function Home() {
 
   const [newCurrency, setNewCurrency] = useState<string>();
 
-  const [rates, setRates] = useState<{ [key: string]: number }>({
-    USD: 1,
-    AUD: 1.4817,
-    BGN: 1.7741,
-    CAD: 1.3168,
-    CHF: 0.9774,
-    CNY: 6.9454,
-    EGP: 15.7361,
-    EUR: 0.9013,
-    GBP: 0.7679,
-    LKR: 305.02,
-  });
+  const [rates, setRates] = useState<RatesResult["conversion_rates"]>();
+  const [lastUpdate, setLastUpdate] = useState<Date>();
 
   const [targets, setTargets] = useState<{ code: string; value?: number }[]>([
     { code: "LKR" },
@@ -46,7 +37,7 @@ export default function Home() {
     setBaseValue(Number(e.target.value));
     setTargets((prev) =>
       prev.map((target) => {
-        const rate = rates[target.code];
+        const rate = rates?.[target.code];
         return {
           ...target,
           value: rate ? rate * Number(e.target.value) : undefined,
@@ -66,7 +57,7 @@ export default function Home() {
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
   ) => {
-    const rate = rates[targets[index].code];
+    const rate = rates?.[targets[index].code];
     if (!rate) {
       return;
     }
@@ -91,19 +82,24 @@ export default function Home() {
     setTargets((prev) => [...prev, { code: newCurrency }]);
   };
 
-  const [data, setData] = useState<any>();
   const [loading, setLoading] = useState(false);
 
   const handleFetch = async (currency: string) => {
-    setLoading(true);
-    const response = await fetchExchangeRates(currency);
-    setData(response);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const response = await fetchExchangeRates(currency);
+      setRates(response.conversion_rates);
+      setLastUpdate(new Date(response.time_last_update_utc));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    handleFetch("USD");
-  }, []);
+    handleFetch(baseCurrency);
+  }, [baseCurrency]);
 
   return (
     <main className="max-w-7xl mx-auto flex min-h-screen flex-col items-center justify-between p-24">
@@ -111,7 +107,11 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-center">
           Welcome to the Exchange Rates
         </h1>
-        <p className="text-center">View and compare exchange rates</p>
+        {lastUpdate && (
+          <p className="text-center text-sm">
+            Last updated: {lastUpdate.toLocaleString()}
+          </p>
+        )}
       </div>
 
       <div className="w-full grid grid-cols-2 gap-4">
@@ -209,11 +209,9 @@ export default function Home() {
 }
 
 const fetchExchangeRates = async (currency: string) => {
-  const response = await fetch(
-    `https://v6.exchangerate-api.com/v6/Key/latest/${currency}`,
-    {
-      method: "GET",
-    }
-  );
-  return await response.json();
+  const response = await fetch("/api/rates?base=" + currency, {
+    method: "GET",
+  });
+  const res: RatesResult = await response.json();
+  return res;
 };
