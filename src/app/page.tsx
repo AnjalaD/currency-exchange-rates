@@ -1,113 +1,219 @@
-import Image from "next/image";
+"use client";
+
+import {
+  Autocomplete,
+  AutocompleteItem,
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Input,
+} from "@nextui-org/react";
+import { useEffect, useState } from "react";
+import { currencies } from "./currencies";
 
 export default function Home() {
+  const [baseCurrency, setBaseCurrency] = useState("USD");
+  const [baseValue, setBaseValue] = useState(1);
+
+  const [newCurrency, setNewCurrency] = useState<string>();
+
+  const [rates, setRates] = useState<{ [key: string]: number }>({
+    USD: 1,
+    AUD: 1.4817,
+    BGN: 1.7741,
+    CAD: 1.3168,
+    CHF: 0.9774,
+    CNY: 6.9454,
+    EGP: 15.7361,
+    EUR: 0.9013,
+    GBP: 0.7679,
+    LKR: 305.02,
+  });
+
+  const [targets, setTargets] = useState<{ code: string; value?: number }[]>([
+    { code: "LKR" },
+  ]);
+
+  const onBaseCurrencyChange = (code: string) => {
+    setBaseCurrency(code);
+    setTargets((prev) =>
+      prev.map((target) => ({ ...target, value: undefined }))
+    );
+  };
+  const onBaseValueChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    setBaseValue(Number(e.target.value));
+    setTargets((prev) =>
+      prev.map((target) => {
+        const rate = rates[target.code];
+        return {
+          ...target,
+          value: rate ? rate * Number(e.target.value) : undefined,
+        };
+      })
+    );
+  };
+
+  const onTargetCurrencyChange = (code: string, index: number) => {
+    const newTargets = [...targets];
+    newTargets[index].code = code;
+    newTargets[index].value = undefined;
+    setTargets(newTargets);
+  };
+
+  const onTargetValueChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const rate = rates[targets[index].code];
+    if (!rate) {
+      return;
+    }
+    const baseValue = +Number(e.target.value) / rate;
+    setBaseValue(+baseValue.toFixed(4));
+
+    setTargets((prev) =>
+      prev.map((target) => {
+        if (target.code === targets[index].code) {
+          return { ...target, value: +e.target.value };
+        }
+
+        const rate = +rates[target.code]?.toFixed(4);
+        return { ...target, value: rate ? rate * baseValue : undefined };
+      })
+    );
+  };
+
+  const onAddCurrency = () => {
+    if (!newCurrency) return;
+    setNewCurrency(undefined);
+    setTargets((prev) => [...prev, { code: newCurrency }]);
+  };
+
+  const [data, setData] = useState<any>();
+  const [loading, setLoading] = useState(false);
+
+  const handleFetch = async (currency: string) => {
+    setLoading(true);
+    const response = await fetchExchangeRates(currency);
+    setData(response);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    handleFetch("USD");
+  }, []);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <main className="max-w-7xl mx-auto flex min-h-screen flex-col items-center justify-between p-24">
+      <div className="flex flex-col items-center justify-between mb-12">
+        <h1 className="text-4xl font-bold text-center">
+          Welcome to the Exchange Rates
+        </h1>
+        <p className="text-center">View and compare exchange rates</p>
+      </div>
+
+      <div className="w-full grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <h2 className="text-large font-bold">
+              Base Currency ({baseCurrency})
+            </h2>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-2">
+            <Autocomplete
+              color="primary"
+              label="Select Base Currency"
+              selectedKey={baseCurrency}
+              onSelectionChange={(key) =>
+                key && onBaseCurrencyChange(key as string)
+              }
+              defaultItems={currencies}
+            >
+              {(item) => (
+                <AutocompleteItem key={item.code} value={item.code}>
+                  {item.code}
+                </AutocompleteItem>
+              )}
+            </Autocomplete>
+            <Input
+              color="primary"
+              label="Amount"
+              type="number"
+              value={baseValue.toString()}
+              onChange={onBaseValueChange}
             />
-          </a>
-        </div>
-      </div>
+          </CardBody>
+        </Card>
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+        {targets.map((target, index) => (
+          <Card key={index}>
+            <CardHeader>
+              <h2 className="text-large font-bold">{target.code}</h2>
+            </CardHeader>
+            <CardBody className="flex flex-col gap-2">
+              <Autocomplete
+                label="Select Target Currency"
+                selectedKey={target.code}
+                onSelectionChange={(key) =>
+                  key && onTargetCurrencyChange(key as string, index)
+                }
+                defaultItems={currencies}
+              >
+                {(item) => (
+                  <AutocompleteItem key={item.code} value={item.code}>
+                    {item.code}
+                  </AutocompleteItem>
+                )}
+              </Autocomplete>
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+              <Input
+                label="Amount"
+                type="number"
+                value={target.value?.toString() || ""}
+                onChange={(e) => onTargetValueChange(e, index)}
+              />
+            </CardBody>
+          </Card>
+        ))}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+        <Card shadow="sm">
+          <CardHeader>
+            <h2 className="text-large font-semibold">Add another currency</h2>
+          </CardHeader>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+          <CardBody>
+            <Autocomplete
+              label="Select Currency"
+              selectedKey={newCurrency}
+              onSelectionChange={(key) => key && setNewCurrency(key as string)}
+              defaultItems={currencies}
+            >
+              {(item) => (
+                <AutocompleteItem key={item.code} value={item.code}>
+                  {item.code}
+                </AutocompleteItem>
+              )}
+            </Autocomplete>
+          </CardBody>
+          <CardFooter>
+            <Button fullWidth onClick={onAddCurrency} isDisabled={!newCurrency}>
+              Add Currency
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     </main>
   );
 }
+
+const fetchExchangeRates = async (currency: string) => {
+  const response = await fetch(
+    `https://v6.exchangerate-api.com/v6/Key/latest/${currency}`,
+    {
+      method: "GET",
+    }
+  );
+  return await response.json();
+};
