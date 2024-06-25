@@ -32,19 +32,19 @@ export default function Home() {
   const removeTargetCurrency = useWidgets.use.removeTargetCurrency();
 
   return (
-    <main className="max-w-7xl mx-auto flex min-h-screen flex-col items-center justify-between py-24 px-8">
-      <div className="flex flex-col items-center justify-between mb-12">
-        <h1 className="text-4xl font-bold text-center">
-          Welcome to the Exchange Rates
+    <main className="max-w-7xl min-h-screen mx-auto flex flex-col items-center justify-between pt-24 px-8">
+      <div className="flex flex-col items-center mb-12">
+        <h1 className="text-green-800 text-4xl font-bold text-center">
+          Welcome to the X-Rates
         </h1>
         {lastUpdated && (
-          <p className="text-center">
+          <p className="text-green-950 text-center">
             Last updated: {new Date(lastUpdated).toLocaleString()}
           </p>
         )}
       </div>
 
-      <div className="w-full grid grid-cols-2 gap-4">
+      <div className="w-full grid md:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardHeader className="gap-2">
             <h2 className="text-5xl font-bold font-mono">{baseCurrency}</h2>
@@ -55,7 +55,7 @@ export default function Home() {
           </CardHeader>
           <CardBody className="flex flex-col gap-2">
             <Input
-              color="primary"
+              color="secondary"
               label="Amount"
               type="number"
               value={baseAmount?.toString() ?? ""}
@@ -135,6 +135,20 @@ export default function Home() {
           </CardBody>
         </Card>
       </div>
+
+      <footer className="rounded-t-large bg-white bg-opacity-80 shadow-small text-center text-xs text-gray-500 px-4 py-2">
+        <div>
+          Made by{" "}
+          <a
+            href="https://github.com/AnjalaD"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-green-800"
+          >
+            AnjalaD
+          </a>
+        </div>
+      </footer>
     </main>
   );
 }

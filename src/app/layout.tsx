@@ -9,7 +9,7 @@ import Image from "next/image";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Exchange Rates",
+  title: "X-Rates",
   description: "View and compare exchange rates",
 };
 
@@ -24,9 +24,9 @@ export default function RootLayout({
         <Image
           src={backgroundImage}
           alt="background"
-          className="absolute top-0 left-0 w-full h-full opacity-[3%]"
+          className="absolute top-0 left-0 w-full h-full opacity-[5%]"
         />
-        <div className="relative">
+        <div className="relative bg-green-800 bg-opacity-10">
           <NextUIProvider>{children}</NextUIProvider>
         </div>
       </body>
