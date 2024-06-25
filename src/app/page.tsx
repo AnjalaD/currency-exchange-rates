@@ -14,6 +14,7 @@ import { useState } from "react";
 import { currencies } from "./currencies";
 import { useLastUpdated } from "@/state/data";
 import { useWidgets } from "@/state/widgets";
+import { XIcon } from "lucide-react";
 
 export default function Home() {
   const lastUpdated = useLastUpdated();
@@ -23,16 +24,15 @@ export default function Home() {
   const base = useWidgets.use.base();
   const baseCurrency = base.currency;
   const baseAmount = base.amount;
-  const setBaseCurrency = useWidgets.use.setBaseCurrency();
   const setBaseAmount = useWidgets.use.setBaseAmount();
 
   const targets = useWidgets.use.target();
   const addTargetCurrency = useWidgets.use.addTargetCurrency();
-  const setTargetCurrency = useWidgets.use.setTargetCurrency();
   const setTargetAmount = useWidgets.use.setTargetAmount();
+  const removeTargetCurrency = useWidgets.use.removeTargetCurrency();
 
   return (
-    <main className="max-w-7xl mx-auto flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="max-w-7xl mx-auto flex min-h-screen flex-col items-center justify-between py-24 px-8">
       <div className="flex flex-col items-center justify-between mb-12">
         <h1 className="text-4xl font-bold text-center">
           Welcome to the Exchange Rates
@@ -46,25 +46,14 @@ export default function Home() {
 
       <div className="w-full grid grid-cols-2 gap-4">
         <Card>
-          <CardHeader>
-            <h2 className="text-large font-bold">
-              Base Currency ({baseCurrency})
-            </h2>
+          <CardHeader className="gap-2">
+            <h2 className="text-5xl font-bold font-mono">{baseCurrency}</h2>
+            <div>
+              <div className="text-sm">{base.country}</div>
+              <div className="text-sm">{base.currencyName}</div>
+            </div>
           </CardHeader>
           <CardBody className="flex flex-col gap-2">
-            <Autocomplete
-              color="primary"
-              label="Select Base Currency"
-              selectedKey={baseCurrency}
-              onSelectionChange={(key) => key && setBaseCurrency(key as string)}
-              defaultItems={currencies}
-            >
-              {(item) => (
-                <AutocompleteItem key={item.code} value={item.code}>
-                  {item.code}
-                </AutocompleteItem>
-              )}
-            </Autocomplete>
             <Input
               color="primary"
               label="Amount"
@@ -77,25 +66,27 @@ export default function Home() {
 
         {targets.map((target, index) => (
           <Card key={index}>
-            <CardHeader>
-              <h2 className="text-large font-bold">{target.currency}</h2>
+            <CardHeader className="gap-2">
+              <h2 className="text-5xl font-bold font-mono">
+                {target.currency}
+              </h2>
+              <div>
+                <div className="text-sm">{target.country}</div>
+                <div className="text-xs">{target.currencyName}</div>
+              </div>
+
+              <div className="absolute top-2 right-2">
+                <Button
+                  isIconOnly
+                  radius="full"
+                  size="sm"
+                  onClick={() => removeTargetCurrency(index)}
+                >
+                  <XIcon size={20} />
+                </Button>
+              </div>
             </CardHeader>
             <CardBody className="flex flex-col gap-2">
-              <Autocomplete
-                label="Select Target Currency"
-                selectedKey={target.currency}
-                onSelectionChange={(key) =>
-                  key && setTargetCurrency(key as string, index)
-                }
-                defaultItems={currencies}
-              >
-                {(item) => (
-                  <AutocompleteItem key={item.code} value={item.code}>
-                    {item.code}
-                  </AutocompleteItem>
-                )}
-              </Autocomplete>
-
               <Input
                 label="Amount"
                 type="number"
@@ -106,12 +97,10 @@ export default function Home() {
           </Card>
         ))}
 
-        <Card shadow="sm">
-          <CardHeader>
-            <h2 className="text-large font-semibold">Add another currency</h2>
-          </CardHeader>
+        <Card className="!transition-opacity !duration-300 opacity-30 hover:opacity-100 ">
+          <CardBody className="gap-2">
+            <h2 className="font-semibold">Add another currency</h2>
 
-          <CardBody>
             <Autocomplete
               label="Select Currency"
               selectedKey={newCurrency}
@@ -119,21 +108,31 @@ export default function Home() {
               defaultItems={currencies}
             >
               {(item) => (
-                <AutocompleteItem key={item.code} value={item.code}>
-                  {item.code}
+                <AutocompleteItem
+                  key={item.currency}
+                  value={item.currency}
+                  textValue={item.currency}
+                >
+                  {item.currency} - {item.country}
                 </AutocompleteItem>
               )}
             </Autocomplete>
-          </CardBody>
-          <CardFooter>
             <Button
               fullWidth
-              onClick={() => newCurrency && addTargetCurrency(newCurrency)}
+              onClick={() => {
+                if (!newCurrency) return;
+
+                const currency = currencies.find(
+                  (c) => c.currency === newCurrency
+                );
+                if (!currency) return;
+                addTargetCurrency(currency);
+              }}
               isDisabled={!newCurrency}
             >
               Add Currency
             </Button>
-          </CardFooter>
+          </CardBody>
         </Card>
       </div>
     </main>

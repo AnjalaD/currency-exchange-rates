@@ -1,82 +1,91 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+
 import { useDataStore } from "./data";
 import { createSelectors } from "@/utils/state-utils";
 
+type Widget = {
+  currency: string;
+  currencyName: string;
+  country: string;
+  amount: number | undefined;
+};
+
 type State = {
-  base: {
-    currency: string;
-    amount: number | undefined;
-  };
-  target: {
-    currency: string;
-    amount: number | undefined;
-  }[];
+  base: Widget;
+  target: Widget[];
 };
 
 type Actions = {
-  setBaseCurrency: (currency: string) => void;
   setBaseAmount: (amount: number) => void;
-  addTargetCurrency: (currency: string) => void;
-  setTargetCurrency: (currency: string, index: number) => void;
+  addTargetCurrency: (widget: Omit<Widget, "amount">) => void;
   setTargetAmount: (amount: number, index: number) => void;
+  removeTargetCurrency: (index: number) => void;
 };
 
 export const useWidgetStore = create<State & Actions>()(
   persist(
-    (set) => ({
-      base: { currency: "USD", amount: 1 },
-      target: [{ currency: "LKR", amount: undefined }],
+    immer((set) => ({
+      base: {
+        currency: "USD",
+        currencyName: "United States Dollar",
+        country: "United States",
+        amount: 1,
+      },
+      target: [
+        {
+          currency: "LKR",
+          currencyName: "Sri Lankan Rupee",
+          country: "Sri Lanka",
+          amount: undefined,
+        },
+      ],
 
-      setBaseCurrency: (currency) =>
-        set((state) => ({
-          base: { currency, amount: 1 },
-          target: state.target.map((t) => ({ ...t, amount: undefined })),
-        })),
       setBaseAmount: (amount) =>
-        set((state) => ({
-          base: { ...state.base, amount },
-          target: state.target.map((t) => {
+        set((state) => {
+          state.base.amount = amount;
+          state.target = state.target.map((t) => {
             const rate = getRate(t.currency);
             return { ...t, amount: rate ? rate * amount : undefined };
-          }),
-        })),
-      addTargetCurrency: (currency) =>
-        set((state) => ({
-          ...state,
-          target: [...state.target, { currency, amount: undefined }],
-        })),
-      setTargetCurrency: (currency, index) =>
-        set((state) => ({
-          target: state.target.map((t, i) => {
-            if (i === index) {
-              return { currency, amount: undefined };
-            }
-            return t;
-          }),
-        })),
+          });
+        }),
+
+      addTargetCurrency: (widget) =>
+        set((state) => {
+          const rate = getRate(widget.currency);
+          const baseAmount = state.base.amount;
+          const amount = rate && baseAmount ? rate * baseAmount : undefined;
+
+          state.target.push({ ...widget, amount });
+        }),
+
       setTargetAmount: (amount, index) =>
         set((state) => {
           const targetRate = getRate(state.target[index].currency);
           if (!targetRate) return state;
 
           const baseAmount = amount / targetRate;
-          return {
-            base: { currency: state.base.currency, amount: baseAmount },
-            target: state.target.map((t, i) => {
-              if (i === index) {
-                return { currency: t.currency, amount };
-              }
-              const rate = getRate(t.currency);
-              return {
-                currency: t.currency,
-                amount: rate ? rate * baseAmount : undefined,
-              };
-            }),
-          };
+
+          state.base.amount = baseAmount;
+          state.target = state.target.map((t, i) => {
+            if (i === index) {
+              return { ...t, amount };
+            }
+            const rate = getRate(t.currency);
+            return {
+              ...t,
+              amount: rate ? rate * baseAmount : undefined,
+            };
+          });
         }),
-    }),
-    { name: "widgets" }
+
+      removeTargetCurrency: (index) =>
+        set((state) => ({
+          target: state.target.filter((_, i) => i !== index),
+        })),
+    })),
+    { name: "widgets", version: 2 }
   )
 );
 
