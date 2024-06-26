@@ -20,7 +20,7 @@ type State = {
 type Actions = {
   setBaseAmount: (amount: number) => void;
   addTargetCurrency: (widget: Omit<Widget, "amount">) => void;
-  setTargetAmount: (amount: number, index: number) => void;
+  setTargetAmount: (index: number, amount: number) => void;
   removeTargetCurrency: (index: number) => void;
 };
 
@@ -60,7 +60,7 @@ export const useWidgetStore = create<State & Actions>()(
           state.target.push({ ...widget, amount });
         }),
 
-      setTargetAmount: (amount, index) =>
+      setTargetAmount: (index, amount) =>
         set((state) => {
           const targetRate = getRate(state.target[index].currency);
           if (!targetRate) return state;
