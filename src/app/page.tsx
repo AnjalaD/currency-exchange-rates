@@ -13,7 +13,7 @@ export default function Home() {
   const targets = useWidgets.use.target();
 
   return (
-    <main className="max-w-7xl min-h-screen mx-auto flex flex-col items-center justify-between pt-24 px-8">
+    <main className="max-w-7xl min-h-screen mx-auto flex flex-col items-center justify-between pt-8 sm:pt-24 px-8">
       <Header />
 
       <div className="w-full grid md:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">

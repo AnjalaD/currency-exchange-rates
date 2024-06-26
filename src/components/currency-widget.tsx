@@ -23,7 +23,7 @@ const CurrencyWidget: React.FC<CurrencyWidgetProps> = ({
 }) => {
   return (
     <Card>
-      <CardHeader className="gap-2">
+      <CardHeader className="gap-2 pb-0">
         <h2 className="text-5xl font-bold font-mono">{currency}</h2>
         <div>
           <div className="text-sm">{country}</div>
@@ -40,10 +40,15 @@ const CurrencyWidget: React.FC<CurrencyWidgetProps> = ({
       </CardHeader>
       <CardBody className="flex flex-col gap-2">
         <Input
-          label="Amount"
+          classNames={{
+            input: "text-xl font-mono placeholder:text-sm",
+          }}
+          size="lg"
+          aria-label="Amount"
+          placeholder="Enter amount"
           type="number"
-          value={amount?.toString() || ""}
-          onChange={(e) => onAmountChange?.(e.target.valueAsNumber)}
+          value={amount?.toString()}
+          onChange={(e) => onAmountChange?.(+e.target.value)}
         />
       </CardBody>
     </Card>

@@ -17,10 +17,8 @@ export const AddWidget: React.FC<Props> = ({}) => {
   const [newCurrency, setNewCurrency] = useState<string>();
 
   return (
-    <Card className="!transition-opacity !duration-300 opacity-30 hover:opacity-100">
+    <Card className="!transition-all !duration-300 bg-green-50 opacity-50 hover:bg-white hover:opacity-100">
       <CardBody className="gap-2">
-        <h2 className="font-semibold">Add another currency</h2>
-
         <Autocomplete
           label="Select Currency"
           selectedKey={newCurrency}

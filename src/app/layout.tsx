@@ -21,13 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Image
-          src={backgroundImage}
-          alt="background"
-          className="absolute top-0 left-0 w-full h-full opacity-[5%]"
-        />
-        <div className="relative bg-green-800 bg-opacity-10">
-          <NextUIProvider>{children}</NextUIProvider>
+        <div className="bg-gradient-to-b from-transparent via-green-100 to-teal-100">
+          <div className="absolute inset-0 opacity-30 bg-gradient-to-r from-transparent via-red-200 to-blue-200" />
+          <div className="relative">
+            <NextUIProvider>{children}</NextUIProvider>
+          </div>
         </div>
       </body>
     </html>

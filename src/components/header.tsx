@@ -5,11 +5,11 @@ export const Header = () => {
 
   return (
     <div className="flex flex-col items-center mb-12">
-      <h1 className="text-green-800 text-4xl font-bold text-center">
-        Welcome to the X-Rates
+      <h1 className="text-5xl font-bold text-center">
+        E<span className="text-7xl text-green-500">X</span>CHANGE RATES
       </h1>
       {lastUpdated && (
-        <p className="text-green-950 text-center">
+        <p className="text-center font-mono">
           Last updated: {new Date(lastUpdated).toLocaleString()}
         </p>
       )}
