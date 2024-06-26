@@ -1,4 +1,4 @@
-import { RatesResult } from "@/app/types/rates";
+import { RatesResult } from "@/types/rates";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
