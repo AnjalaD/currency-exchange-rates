@@ -22,6 +22,7 @@ type Actions = {
   addTargetCurrency: (widget: Omit<Widget, "amount">) => void;
   setTargetAmount: (index: number, amount: number) => void;
   removeTargetCurrency: (index: number) => void;
+  swapTargetCurrencies: (index1: number, index2: number) => void;
 };
 
 export const useWidgetStore = create<State & Actions>()(
@@ -84,6 +85,15 @@ export const useWidgetStore = create<State & Actions>()(
         set((state) => ({
           target: state.target.filter((_, i) => i !== index),
         })),
+
+      swapTargetCurrencies: (index1, index2) =>
+        set((state) => {
+          const target1 = state.target[index1];
+          const target2 = state.target[index2];
+
+          state.target[index1] = target2;
+          state.target[index2] = target1;
+        }),
     })),
     { name: "widgets", version: 2 }
   )
