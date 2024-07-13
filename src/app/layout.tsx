@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { NextUIProvider } from "@nextui-org/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
 
 import "./globals.css";
 
@@ -26,6 +27,7 @@ export default function RootLayout({
             <NextUIProvider>{children}</NextUIProvider>
           </div>
         </div>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>
