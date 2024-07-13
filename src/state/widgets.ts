@@ -23,6 +23,7 @@ type Actions = {
   setTargetAmount: (index: number, amount: number) => void;
   removeTargetCurrency: (index: number) => void;
   swapTargetCurrencies: (index1: number, index2: number) => void;
+  refresh: () => void;
 };
 
 export const useWidgetStore = create<State & Actions>()(
@@ -94,6 +95,22 @@ export const useWidgetStore = create<State & Actions>()(
           state.target[index1] = target2;
           state.target[index2] = target1;
         }),
+
+      refresh: () => {
+        set((state) => {
+          if (!state.base.amount) {
+            state.base.amount = 1;
+          }
+
+          state.target = state.target.map((t) => {
+            const rate = getRate(t.currency);
+            return {
+              ...t,
+              amount: rate ? rate * state.base.amount! : undefined,
+            };
+          });
+        });
+      },
     })),
     { name: "widgets", version: 2 }
   )
@@ -103,5 +120,9 @@ const getRate = (currency: string) => {
   const rate = useDataStore.getState().rates?.[currency];
   return rate;
 };
+
+useDataStore.subscribe(() => {
+  useWidgetStore.getState().refresh();
+});
 
 export const useWidgets = createSelectors(useWidgetStore);
